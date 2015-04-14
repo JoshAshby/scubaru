@@ -5,6 +5,10 @@ module Scubaru
   class Middleware
     include ActiveSupport::Configurable
 
+    config_accessor :enable do
+      true
+    end
+
     # Which urls should we change the log level for?
     config_accessor :blacklist do
       Scubaru::Lister.new(items: [

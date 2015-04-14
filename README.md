@@ -10,6 +10,35 @@ Currently it has two parts:
 
 # Usage
 
-```
+Add this to your `Gemfile`
+```ruby
 gem 'scubaru', git: 'https://github.com/JoshAshby/scubaru.git', require: 'scubaru'
+```
+
+Then you can either stick with the default behavior, which isn't too recommended or you can set up your own options in an initializer:
+
+## Subscriber options
+```ruby
+Scubaru::Subscriber.enable = false
+
+# Use rails standard reverse domain notation for notifications
+Scubaru::Subscriber.direction = :reverse
+
+# Use redis style : delimiters for domain notation
+Scubaru::Subscriber.delimiter = ':'
+
+# Only blacklist notifications for railties
+Scubaru::Subscriber.blacklist = Scubaru::Lister.new(items: [
+  Scubaru::Subscriber::BlacklistItem(%r|railtie|)
+])
+```
+
+## Middleware options
+```ruby
+Scubaru::Middleware.enable = false
+
+# make any url that has `/home` in it log quietly
+Scubaru::Middleware.blacklist = Scubaru::Lister.new(items: [
+  Scubaru::Middleware::BlacklistItem.new($r|^/home|, :GET)
+])
 ```

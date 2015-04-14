@@ -5,6 +5,10 @@ module Scubaru
   class Subscriber
     include ActiveSupport::Configurable
 
+    config_accessor :enable do
+      true
+    end
+
     # What notification patterns do we not want to log?
     config_accessor :blacklist do
       Scubaru::Lister.new(items: [
