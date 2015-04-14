@@ -37,6 +37,9 @@ Scubaru::Subscriber.blacklist = Scubaru::Lister.new(items: [
 ```ruby
 Scubaru::Middleware.enable = false
 
+# change the log level to FATAL for urls in the blacklist
+Scubaru::Middleware.log_level = Logger::FATAL
+
 # make any url that has `/home` in it log quietly
 Scubaru::Middleware.blacklist = Scubaru::Lister.new(items: [
   Scubaru::Middleware::BlacklistItem.new($r|^/home|, :GET)
