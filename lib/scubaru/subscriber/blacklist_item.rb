@@ -3,7 +3,7 @@ module Scubaru
 
     BlacklistItem = Struct.new(:pattern) do
       def match? method
-        method.starts_with? pattern
+        ! pattern.match(method).nil?
       end
     end
 

@@ -9,9 +9,9 @@ Gem::Specification.new do |s|
   s.version     = Scubaru::VERSION
   s.authors     = ["JoshAshby"]
   s.email       = ["joshuaashby@joshashby.com"]
-  s.homepage    = "TODO"
+  s.homepage    = "https://github.com/JoshAshby/scubaru"
   s.summary     = "Basic utils to help with rails deving"
-  s.description = "TODO: Description of Scubaru."
+  s.description = "Basic utils to help with rails deving"
   s.license     = "MIT"
 
   s.files = Dir["{app,config,db,lib}/**/*", "MIT-LICENSE", "Rakefile", "README.rdoc"]
