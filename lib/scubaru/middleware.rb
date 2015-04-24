@@ -6,13 +6,12 @@ module Scubaru
     include ActiveSupport::Configurable
 
     config_accessor :enable do
-      true
+      false
     end
 
     # Which urls should we change the log level for?
     config_accessor :blacklist do
       Scubaru::Lister.new(items: [
-        Scubaru::Middleware::BlacklistItem.new(%r|^/api/notifications/unobserved_count$|, nil),
         Scubaru::Middleware::BlacklistItem.new(%r|^/assets/.*$|, nil)
       ])
     end
@@ -27,6 +26,8 @@ module Scubaru
     end
 
     def call request
+      return @app.call request unless Scubaru::Middleware.enable
+
       headers = ActionDispatch::Http::Headers.new request
 
       if Scubaru::Middleware.blacklist.match? headers

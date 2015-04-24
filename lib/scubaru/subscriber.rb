@@ -6,7 +6,7 @@ module Scubaru
     include ActiveSupport::Configurable
 
     config_accessor :enable do
-      true
+      false
     end
 
     # What notification patterns do we not want to log?
@@ -19,7 +19,7 @@ module Scubaru
     end
 
     config_accessor :direction do
-      :forward
+      :reverse
     end
 
     config_accessor :delimiter do
@@ -30,36 +30,38 @@ module Scubaru
       ActiveSupport::Notifications.subscribe /.*/, new
     end
 
+    # Well... This is a bit long... :|
     def call message, *args
+      return unless Scubaru::Subscriber.enable
+
       message = message.to_s
+      event = ActiveSupport::Notifications::Event.new(message, *args)
 
       if Scubaru::Subscriber.blacklist.match? message
-        Scubaru.logger.debug "Skipping notification for #{ message.humanize }" and return
+        Scubaru.logger.debug "Skipping notification for #{ message.humanize }"
+        return
       end
 
-      if Scubaru::Subscriber.direction == :forward
-        method = message.split(Scubaru::Subscriber.delimiter, 2)[1]
-      else
-        method = message.reverse.split(Scubaru::Subscriber.delimiter, 2)[1].reverse
+      if event.payload.blank?
+        Scubaru.logger.debug "Payload is empty for #{ event.name }"
+        Scubaru.logger.ap event
+        return
       end
 
-      method.gsub! Scubaru::Subscriber.delimiter, '_'
-
-      send method, ActiveSupport::Notifications::Event.new(message, *args)
+      log_event message, event
     end
 
-    def method_missing method, event=nil
-      method = method.to_s
-
-      if event.blank?
-        Scubaru.logger.debug "Args didn't have an event in them for methodod #{ method }"
-        Scubaru.logger.ap event
-        return nil
+    def log_event message, event
+      method = message.split(Scubaru::Subscriber.delimiter)
+      case Scubaru::Subscriber.direction
+      when :forward
+        namespace = method.shift
+      when :reverse
+        namespace = method.pop
       end
 
-      namespace = event.name.split('.').first.to_s
-
-      title = " Event: #{ namespace.humanize } - #{ method.humanize } "
+      method = method.join '_'
+      title = " Event: #{ method.titlecase } Namespace: #{ namespace.titlecase }"
 
       Scubaru.logger.info "\033[1;31m===============#{ title }===============\033[0m"
       Scubaru.logger.info "Event #{ event.name } took #{ event.duration }ms to complete"
