@@ -9,6 +9,10 @@ module Scubaru
       false
     end
 
+    config_accessor :accessor do
+      -> (asn_event) { asn_event }
+    end
+
     # What notification patterns do we not want to log?
     config_accessor :blacklist do
       Scubaru::Lister.new(items: [
@@ -27,7 +31,7 @@ module Scubaru
     end
 
     def self.attach_to_all
-      ActiveSupport::Notifications.subscribe /.*/, new
+      ActiveSupport::Notifications.subscribe /(.*)/, new
     end
 
     # Well... This is a bit long... :|
@@ -60,6 +64,8 @@ module Scubaru
         namespace = method.pop
       end
 
+      payload = Scubaru::Subscriber.accessor[ event.payload ]
+
       method = method.join '_'
       title = " Event: #{ method.titlecase } Namespace: #{ namespace.titlecase }"
 
@@ -67,7 +73,7 @@ module Scubaru
       Scubaru.logger.info "Event #{ event.name } took #{ event.duration }ms to complete"
       Scubaru.logger.info "method: #{ method }"
       Scubaru.logger.info "Payload:"
-      Scubaru.logger.ap event.payload, :info
+      Scubaru.logger.ap payload, :info
       Scubaru.logger.info "\033[1;31m------------------------------#{ "-" * title.length }\033[0m"
     end
 
