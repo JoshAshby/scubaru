@@ -15,33 +15,29 @@ Add this to your `Gemfile`
 gem 'scubaru', git: 'https://github.com/JoshAshby/scubaru.git', require: 'scubaru'
 ```
 
-Then you can either stick with the default behavior, which isn't too recommended or you can set up your own options in an initializer:
+Then you can either stick with the default behavior (which isn't that bad but also not recommended) or you can set up your own options in an initializer:
 
 ## Subscriber options
 ```ruby
-Scubaru::Subscriber.enable = false
-
 # Use rails standard reverse domain notation for notifications
-Scubaru::Subscriber.direction = :reverse
+Scubaru::Subscriber.fqn_direction = :reverse
 
-# Use redis style : delimiters for domain notation
+# Use redis style : delimiters for the ASN event name notation
 Scubaru::Subscriber.delimiter = ':'
 
 # Only blacklist notifications for railties
-Scubaru::Subscriber.blacklist = Scubaru::Lister.new(items: [
-  Scubaru::Subscriber::BlacklistItem(%r|railtie|)
-])
+Scubaru::Subscriber.blacklist = [
+  %r|railtie|
+]
 ```
 
 ## Middleware options
 ```ruby
-Scubaru::Middleware.enable = false
-
 # change the log level to FATAL for urls in the blacklist
 Scubaru::Middleware.log_level = Logger::FATAL
 
-# make any url that has `/home` in it log quietly
-Scubaru::Middleware.blacklist = Scubaru::Lister.new(items: [
-  Scubaru::Middleware::BlacklistItem.new($r|^/home|, :GET)
-])
+# make any GET request that starts with `/home` has its log level changed to `log_level`
+Scubaru::Middleware.blacklist = [
+  { pattern: $r|^/home|, method: :get }
+]
 ```
