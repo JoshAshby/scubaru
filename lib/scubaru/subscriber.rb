@@ -1,13 +1,6 @@
-require 'scubaru/lister'
-require 'scubaru/subscriber/blacklist_item'
-
 module Scubaru
   class Subscriber
     include ActiveSupport::Configurable
-
-    config_accessor :enable do
-      false
-    end
 
     config_accessor :accessor do
       -> (asn_event) { asn_event }
@@ -15,14 +8,14 @@ module Scubaru
 
     # What notification patterns do we not want to log?
     config_accessor :blacklist do
-      Scubaru::Lister.new(items: [
-        Scubaru::Subscriber::BlacklistItem.new(%r|action_|),
-        Scubaru::Subscriber::BlacklistItem.new(%r|active_|),
-        Scubaru::Subscriber::BlacklistItem.new(%r|railtie|)
-      ])
+      [
+        %r|action_|,
+        %r|active_|,
+        %r|railtie|
+      ]
     end
 
-    config_accessor :direction do
+    config_accessor :fqn_direction do
       :reverse
     end
 
@@ -31,23 +24,22 @@ module Scubaru
     end
 
     def self.attach_to_all
-      ActiveSupport::Notifications.subscribe /(.*)/, new
+      ActiveSupport::Notifications.subscribe(/(.*)/, new)
     end
 
     # Well... This is a bit long... :|
     def call message, *args
-      return unless Scubaru::Subscriber.enable
-
       message = message.to_s
-      event = ActiveSupport::Notifications::Event.new(message, *args)
 
-      if Scubaru::Subscriber.blacklist.match? message
-        Scubaru.logger.debug "Skipping notification for #{ message.humanize }"
+      if blacklisted? message
+        Scubaru.logger.debug ">> Skipping notification for #{ message.humanize }"
         return
       end
 
+      event = ActiveSupport::Notifications::Event.new(message, *args)
+
       if event.payload.blank?
-        Scubaru.logger.debug "Payload is empty for #{ event.name }"
+        Scubaru.logger.debug "<< Payload is empty for #{ event.name }"
         Scubaru.logger.ap event
         return
       end
@@ -55,9 +47,18 @@ module Scubaru
       log_event message, event
     end
 
+    protected
+
+    def blacklisted? method
+      Scubaru::Subscriber.blacklist.any? do |pattern|
+        pattern.match method
+      end
+    end
+
     def log_event message, event
-      method = message.split(Scubaru::Subscriber.delimiter)
-      case Scubaru::Subscriber.direction
+      method = message.split Scubaru::Subscriber.delimiter
+
+      case Scubaru::Subscriber.fqn_direction
       when :forward
         namespace = method.shift
       when :reverse
@@ -76,6 +77,5 @@ module Scubaru
       Scubaru.logger.ap payload, :info
       Scubaru.logger.info "\033[1;31m------------------------------#{ "-" * title.length }\033[0m"
     end
-
   end
 end
